@@ -1,0 +1,11 @@
+{
+  "url": "https://go.dev/",
+  "tester_count": 5,
+  "type": "http",
+  "auth_data": [],
+  "timeout": 0,
+  "method": "GET",
+  "headers": {},
+  "body": {},
+  "params": {}
+}
