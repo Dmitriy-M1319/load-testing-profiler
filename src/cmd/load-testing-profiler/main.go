@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/http"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/parser"
+	"github.com/Dmitriy-M1319/load-testing-profiler/internal/report"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/runner"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/server"
 )
@@ -31,7 +31,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to parse metadata file: %s", err)
 	}
-	fmt.Println(preparedData)
 
 	if preparedData.Type == "http" {
 		httpData, err := hParser.ParseFromBytes(bSlice)
@@ -39,14 +38,12 @@ func main() {
 			log.Fatalf("Failed to parse http metadata: %s", err)
 		}
 		run = http.NewRunner(*httpData)
-	}
 
-	ctx := context.Background()
+		ctx := context.Background()
 
-	srv := server.NewRunningServer(int32(preparedData.TesterCount), run)
-	srv.StartLoadTesting(ctx)
+		srv := server.NewRunningServer(int32(httpData.TesterCount), run)
+		srv.StartLoadTesting(ctx)
 
-	for res := range srv.Result {
-		log.Printf("Result: %d, duration: %dms", res.Status, res.RequestDuration.Milliseconds())
+		report.PrintHttpReport(srv.Result, httpData)
 	}
 }

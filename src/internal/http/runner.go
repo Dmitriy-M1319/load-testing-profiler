@@ -2,10 +2,11 @@ package http
 
 import (
 	"context"
-	"github.com/Dmitriy-M1319/load-testing-profiler/internal/runner"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/Dmitriy-M1319/load-testing-profiler/internal/runner"
 )
 
 type Runner struct {
@@ -18,11 +19,9 @@ func NewRunner(metadata Metadata) *Runner {
 
 func (r *Runner) Run(ctx context.Context) (runner.RunningInfo, error) {
 	var timeoutCtx context.Context = nil
-	if r.Metadata.Timeout != 0 {
-		newCtx, cancel := context.WithTimeout(ctx, time.Millisecond*time.Duration(r.Metadata.Timeout))
-		defer cancel()
-		timeoutCtx = newCtx
-	}
+	newCtx, cancel := context.WithTimeout(ctx, time.Millisecond*time.Duration(r.Metadata.Timeout))
+	defer cancel()
+	timeoutCtx = newCtx
 
 	var body io.Reader = nil
 	if len(r.Metadata.Body) > 0 {

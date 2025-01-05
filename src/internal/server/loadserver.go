@@ -30,11 +30,11 @@ func (s *RunningServer) StartLoadTesting(ctx context.Context) {
 
 			info, err := s.Runner.Run(ctx)
 			if err != nil {
+				log.Printf("Error: %s", err)
 				// TODO: залогировать по нормальному
 			}
 
 			s.Result <- info
-			log.Println("goroutine end")
 		}()
 	}
 

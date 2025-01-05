@@ -1,9 +1,9 @@
 {
-  "url": "https://go.dev/",
-  "tester_count": 5,
+  "url": "https://go.dev",
+  "tester_count": 2500,
   "type": "http",
   "auth_data": [],
-  "timeout": 0,
+  "timeout": 20,
   "method": "GET",
   "headers": {},
   "body": {},
