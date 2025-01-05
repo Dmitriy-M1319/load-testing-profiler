@@ -21,18 +21,16 @@ func NewRunningServer(totalCount int32, r runner.IRunner) *RunningServer {
 		Result:     make(chan runner.RunningInfo, totalCount)}
 }
 
-func (s *RunningServer) StartLoadTesting(ctx context.Context, cancel context.CancelFunc) {
+func (s *RunningServer) StartLoadTesting(ctx context.Context) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < int(s.TotalCount); i++ {
 		wg.Add(1)
 		go func() {
-			log.Println("goroutine start")
 			defer wg.Done()
 
 			info, err := s.Runner.Run(ctx)
 			if err != nil {
 				// TODO: залогировать по нормальному
-				log.Printf("request fatal: %s", err)
 			}
 
 			s.Result <- info
@@ -41,5 +39,5 @@ func (s *RunningServer) StartLoadTesting(ctx context.Context, cancel context.Can
 	}
 
 	wg.Wait()
-	log.Println("goroutines cancelled")
+	close(s.Result)
 }

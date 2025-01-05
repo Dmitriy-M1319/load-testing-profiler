@@ -14,28 +14,29 @@ type BaseTestingMetadata struct {
 	Timeout     int32    `json:"timeout"`
 }
 
-type HttpTestingMetadata struct {
-	BaseTestingMetadata
-	Method      string            `json:"method"`
-	Headers     map[string]string `json:"headers"`
-	Body        map[string]string `json:"body"`
-	QueryParams map[string]any    `json:"params"`
+type IParser interface {
+	ParseFromBytes(data []byte) (*BaseTestingMetadata, error)
+	ParseFromFile(filepath string) (*BaseTestingMetadata, []byte, error)
 }
 
-type IHttpParser interface {
-	ParseFromText(text string) (*HttpTestingMetadata, error)
-	ParseFromFile(filepath string) (*HttpTestingMetadata, error)
+type JsonParser struct{}
+
+func NewJsonParser() *JsonParser {
+	return &JsonParser{}
 }
 
-type JsonHttpParser struct{}
-
-func NewJsonHttpParser() *JsonHttpParser {
-	return &JsonHttpParser{}
+func (j *JsonParser) ParseFromFile(filepath string) (*BaseTestingMetadata, []byte, error) {
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, nil, err
+	}
+	result, err := j.ParseFromBytes(data)
+	return result, data, nil
 }
 
-func (jp *JsonHttpParser) ParseFromText(text string) (*HttpTestingMetadata, error) {
-	var result HttpTestingMetadata
-	err := json.Unmarshal([]byte(text), &result)
+func (j *JsonParser) ParseFromBytes(data []byte) (*BaseTestingMetadata, error) {
+	var result BaseTestingMetadata
+	err := json.Unmarshal(data, &result)
 	if err != nil {
 		// TODO: Пока базовый логгер
 		log.Printf("Failed to parse json from text: %s", err)
@@ -43,13 +44,4 @@ func (jp *JsonHttpParser) ParseFromText(text string) (*HttpTestingMetadata, erro
 	}
 
 	return &result, nil
-}
-
-func (jp *JsonHttpParser) ParseFromFile(filepath string) (*HttpTestingMetadata, error) {
-	data, err := os.ReadFile(filepath)
-	if err != nil {
-		return nil, err
-	}
-	result, err := jp.ParseFromText(string(data))
-	return result, nil
 }

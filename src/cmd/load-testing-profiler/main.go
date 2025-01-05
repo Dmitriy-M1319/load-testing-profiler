@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
-	"time"
 
+	"github.com/Dmitriy-M1319/load-testing-profiler/internal/http"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/parser"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/runner"
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/server"
 )
 
-var pr parser.IHttpParser
+var hParser http.IHttpParser
+var bParser parser.IParser
 var run runner.IRunner
 
 func main() {
@@ -20,27 +22,31 @@ func main() {
 		log.Fatal(errMsg)
 	}
 
+	//filename := "../data.json"
 	filename := os.Args[1]
-	pr = parser.NewJsonHttpParser()
-	preparedData, err := pr.ParseFromFile(filename)
+	bParser = parser.NewJsonParser()
+	hParser = http.NewJsonHttpParser()
+	preparedData, bSlice, err := bParser.ParseFromFile(filename)
 
 	if err != nil {
 		log.Fatalf("Failed to parse metadata file: %s", err)
 	}
+	fmt.Println(preparedData)
 
-	run = runner.NewHttpRunner(*preparedData)
-	ctx := context.Background()
-	var cancel context.CancelFunc
-	if preparedData.Timeout != 0 {
-		ctx, cancel = context.WithTimeout(ctx, time.Second*time.Duration(preparedData.Timeout))
+	if preparedData.Type == "http" {
+		httpData, err := hParser.ParseFromBytes(bSlice)
+		if err != nil {
+			log.Fatalf("Failed to parse http metadata: %s", err)
+		}
+		run = http.NewRunner(*httpData)
 	}
+
+	ctx := context.Background()
 
 	srv := server.NewRunningServer(int32(preparedData.TesterCount), run)
-	srv.StartLoadTesting(ctx, cancel)
+	srv.StartLoadTesting(ctx)
 
 	for res := range srv.Result {
-		log.Printf("Result: %d", res.Status)
+		log.Printf("Result: %d, duration: %dms", res.Status, res.RequestDuration.Milliseconds())
 	}
-
-	close(srv.Result)
 }
