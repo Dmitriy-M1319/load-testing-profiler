@@ -2,8 +2,9 @@ package parser
 
 import (
 	"encoding/json"
-	"log"
 	"os"
+
+	"github.com/rs/zerolog"
 )
 
 type BaseTestingMetadata struct {
@@ -38,8 +39,9 @@ func (j *JsonParser) ParseFromBytes(data []byte) (*BaseTestingMetadata, error) {
 	var result BaseTestingMetadata
 	err := json.Unmarshal(data, &result)
 	if err != nil {
-		// TODO: Пока базовый логгер
-		log.Printf("Failed to parse json from text: %s", err)
+		// Продвинутая версия логов, но пока тоже наружу
+		logger := zerolog.New(os.Stdout)
+		logger.Error().Msgf("Failed to parse json from text: %s", err)
 		return nil, err
 	}
 

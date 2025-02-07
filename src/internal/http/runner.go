@@ -1,7 +1,9 @@
 package http
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"time"
@@ -18,17 +20,18 @@ func NewRunner(metadata Metadata) *Runner {
 }
 
 func (r *Runner) Run(ctx context.Context) (runner.RunningInfo, error) {
-	var timeoutCtx context.Context = nil
-	newCtx, cancel := context.WithTimeout(ctx, time.Millisecond*time.Duration(r.Metadata.Timeout))
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Millisecond*time.Duration(r.Metadata.Timeout))
 	defer cancel()
-	timeoutCtx = newCtx
-
 	var body io.Reader = nil
 	if len(r.Metadata.Body) > 0 {
-		// TODO: перегон мапы в поток байтов
+		bodyBytes, err := json.Marshal(r.Metadata.Body)
+		if err != nil {
+			return runner.RunningInfo{Status: 400}, err
+		}
+		body = bytes.NewReader(bodyBytes)
 	}
 	client := &http.Client{}
-	req, err := http.NewRequestWithContext(ctx, r.Metadata.Method, r.Metadata.URL, body)
+	req, err := http.NewRequest(r.Metadata.Method, r.Metadata.URL, body)
 	if err != nil {
 		return runner.RunningInfo{Status: 500}, err
 	}
@@ -38,6 +41,7 @@ func (r *Runner) Run(ctx context.Context) (runner.RunningInfo, error) {
 	}
 
 	// Замер времени выполнения
+	req = req.WithContext(timeoutCtx)
 	start := time.Now()
 	resp, err := client.Do(req)
 	end := time.Since(start)

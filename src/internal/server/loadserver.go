@@ -2,11 +2,19 @@ package server
 
 import (
 	"context"
-	"log"
+	"os"
 	"sync"
 
 	"github.com/Dmitriy-M1319/load-testing-profiler/internal/runner"
+	"github.com/rs/zerolog"
 )
+
+type threadLogger struct {
+	logger zerolog.Logger
+	mutex  sync.Mutex
+}
+
+var logger threadLogger = threadLogger{logger: zerolog.New(os.Stdout)}
 
 type RunningServer struct {
 	TotalCount int32
@@ -30,8 +38,9 @@ func (s *RunningServer) StartLoadTesting(ctx context.Context) {
 
 			info, err := s.Runner.Run(ctx)
 			if err != nil {
-				log.Printf("Error: %s", err)
-				// TODO: залогировать по нормальному
+				logger.mutex.Lock()
+				logger.logger.Error().Msgf("Error: %s", err)
+				logger.mutex.Unlock()
 			}
 
 			s.Result <- info
